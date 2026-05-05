@@ -1,240 +1,140 @@
-// =========================
-// সম্পূর্ণ বাংলা ইনভেন্টরি সিস্টেম (Node.js + MongoDB)
-// =========================
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ইনভেন্টরি ম্যানেজমেন্ট সিস্টেম</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+    }
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    .container {
+      width: 90%;
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+    }
+    button {
+      background: #27ae60;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #219150;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background: #34495e;
+      color: white;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
 
-// ---------- BACKEND (server.js) ----------
+<header>
+  <h2>ইনভেন্টরি ম্যানেজমেন্ট সিস্টেম (GitHub Pages)</h2>
+</header>
 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+<div class="container">
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+  <!-- Login Section -->
+  <div id="loginBox" class="card">
+    <h3>লগইন</h3>
+    <input type="text" id="username" placeholder="ইউজারনেম" />
+    <input type="password" id="password" placeholder="পাসওয়ার্ড" />
+    <button onclick="login()">লগইন</button>
+  </div>
 
-mongoose.connect('mongodb://127.0.0.1:27017/inventoryDB')
-  .then(() => console.log('ডাটাবেজ সংযুক্ত হয়েছে'))
-  .catch(err => console.log(err));
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden">
 
-// ইউজার স্কিমা
-const userSchema = new mongoose.Schema({
-  username: String,
-  password: String
-});
+    <div class="card">
+      <h3>নতুন প্রোডাক্ট যোগ করুন</h3>
+      <input type="text" id="pname" placeholder="প্রোডাক্ট নাম" />
+      <input type="number" id="pqty" placeholder="পরিমাণ" />
+      <button onclick="addProduct()">যোগ করুন</button>
+    </div>
 
-const User = mongoose.model('User', userSchema);
+    <div class="card">
+      <h3>স্টক লিস্ট</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>নাম</th>
+            <th>পরিমাণ</th>
+            <th>অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="productList"></tbody>
+      </table>
+    </div>
 
-// পণ্য স্কিমা
-const itemSchema = new mongoose.Schema({
-  nam: String,
-  poriman: Number,
-  dam: Number
-});
+    <button style="background:red" onclick="logout()">লগআউট</button>
 
-const Item = mongoose.model('Item', itemSchema);
+  </div>
 
-// -------- রেজিস্টার --------
-app.post('/api/register', async (req, res) => {
-  const user = new User(req.body);
-  await user.save();
-  res.json({ message: 'রেজিস্ট্রেশন সম্পন্ন হয়েছে' });
-});
+</div>
 
-// -------- লগইন --------
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username, password });
+<script>
+  let products = JSON.parse(localStorage.getItem("products")) || [];
 
-  if (user) {
-    res.json({ success: true, message: 'লগইন সফল' });
-  } else {
-    res.json({ success: false, message: 'ভুল তথ্য' });
+  function login() {
+    let u = document.getElementById("username").value;
+    let p = document.getElementById("password").value;
+
+    if (u === "admin" && p === "1234") {
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+      render();
+    } else {
+      alert("ভুল ইউজারনেম বা পাসওয়ার্ড!");
+    }
   }
-});
 
-// -------- পণ্য যোগ --------
-app.post('/api/items', async (req, res) => {
-  const item = new Item(req.body);
-  await item.save();
-  res.json(item);
-});
-
-// -------- সব পণ্য --------
-app.get('/api/items', async (req, res) => {
-  const items = await Item.find();
-  res.json(items);
-});
-
-// -------- পণ্য মুছুন --------
-app.delete('/api/items/:id', async (req, res) => {
-  await Item.findByIdAndDelete(req.params.id);
-  res.json({ message: 'মুছে ফেলা হয়েছে' });
-});
-
-app.listen(5000, () => console.log('সার্ভার চালু আছে (port 5000)'));
-
-
-// ---------- LOGIN PAGE (login.html) ----------
-
-/*
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8">
-<title>লগইন</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container mt-5">
-
-<h3>🔐 লগইন করুন</h3>
-
-<input id="username" class="form-control" placeholder="ইউজারনেম"><br>
-<input id="password" type="password" class="form-control" placeholder="পাসওয়ার্ড"><br>
-<button onclick="login()" class="btn btn-primary">লগইন</button>
-
-<script>
-async function login() {
-  const res = await fetch('http://localhost:5000/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    alert('লগইন সফল');
-    window.location.href = 'index.html';
-  } else {
-    alert('ভুল ইউজারনেম বা পাসওয়ার্ড');
+  function logout() {
+    location.reload();
   }
-}
-</script>
 
-</body>
-</html>
-*/
+  function addProduct() {
+    let name = document.getElementById("pname").value;
+    let qty = document.getElementById("pqty").value;
 
+    if (!name || !qty) return alert("সব তথ্য দিন");
 
-// ---------- REGISTER PAGE (register.html) ----------
+    products.push({ name, qty });
+    localStorage.setItem("products", JSON.stringify(products));
 
-/*
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8">
-<title>রেজিস্ট্রেশন</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container mt-5">
-
-<h3>📝 নতুন ইউজার তৈরি</h3>
-
-<input id="username" class="form-control" placeholder="ইউজারনেম"><br>
-<input id="password" type="password" class="form-control" placeholder="পাসওয়ার্ড"><br>
-<button onclick="register()" class="btn btn-success">রেজিস্টার</button>
-
-<script>
-async function register() {
-  await fetch('http://localhost:5000/api/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username: username.value,
-      password: password.value
-    })
-  });
-
-  alert('রেজিস্ট্রেশন সফল হয়েছে');
-  window.location.href = 'login.html';
-}
-</script>
-
-</body>
-</html>
-*/
-
-
-// ---------- INVENTORY PAGE (index.html) ----------
-
-/*
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8">
-<title>ইনভেন্টরি</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container mt-4">
-
-<h2>📦 ইনভেন্টরি ম্যানেজমেন্ট</h2>
-
-<form id="form">
-<input id="nam" class="form-control" placeholder="পণ্যের নাম"><br>
-<input id="poriman" type="number" class="form-control" placeholder="পরিমাণ"><br>
-<input id="dam" type="number" class="form-control" placeholder="দাম"><br>
-<button class="btn btn-primary">পণ্য যোগ করুন</button>
-</form>
-
-<table class="table mt-4">
-<thead>
-<tr>
-<th>নাম</th>
-<th>পরিমাণ</th>
-<th>দাম</th>
-<th>অ্যাকশন</th>
-</tr>
-</thead>
-<tbody id="data"></tbody>
-</table>
-
-<script>
-const API = 'http://localhost:5000/api/items';
-
-async function load() {
-  const res = await fetch(API);
-  const items = await res.json();
-  data.innerHTML = '';
-
-  items.forEach(i => {
-    data.innerHTML += `
-    <tr>
-    <td>${i.nam}</td>
-    <td>${i.poriman}</td>
-    <td>${i.dam}</td>
-    <td><button onclick="del('${i._id}')" class="btn btn-danger">মুছুন</button></td>
-    </tr>`;
-  });
-}
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nam: nam.value,
-      poriman: poriman.value,
-      dam: dam.value
-    })
-  });
-
-  form.reset();
-  load();
-});
-
-async function del(id) {
-  await fetch(API + '/' + id, { method: 'DELETE' });
-  load();
-}
-
-load();
-</script>
-
-</body>
-</html>
-*/
+    document.getElementById("pname").value = "";
