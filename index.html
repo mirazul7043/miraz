@@ -111,18 +111,18 @@
 <script>
   let products = JSON.parse(localStorage.getItem("products")) || [];
 
-  function login() {
-    let u = document.getElementById("username").value;
-    let p = document.getElementById("password").value;
+  window.login = function () {
+  let u = document.getElementById("username").value;
+  let p = document.getElementById("password").value;
 
-    if (u === "admin" && p === "1234") {
-      document.getElementById("loginBox").classList.add("hidden");
-      document.getElementById("dashboard").classList.remove("hidden");
-      render();
-    } else {
-      alert("ভুল ইউজারনেম বা পাসওয়ার্ড!");
-    }
+  if (u === "admin" && p === "1234") {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    render();
+  } else {
+    alert("ভুল ইউজারনেম বা পাসওয়ার্ড!");
   }
+};
 
   function logout() {
     location.reload();
